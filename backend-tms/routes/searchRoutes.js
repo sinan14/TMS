@@ -3,10 +3,13 @@ const searchController = require('./../controllers/searchController');
 
 const router = express.Router();
 
-router.get('/name/:keyword', searchController.searchByName);
-router.get('/course/:keyword', searchController.searchByCourse);
-router.get('/skill/:keyword', searchController.searchBySkill);
-router.get('/type-of-employment/:keyword', searchController.searchByEmployment);
-router.get('/common/:keyword', searchController.commonSearch);
+router.get('/name/:searchKey', searchController.searchByName);
+router.get('/course/:searchKey', searchController.searchByCourse);
+router.get('/skill/:searchKey', searchController.searchBySkill);
+router.get(
+  '/type-of-employment/:searchKey',
+  searchController.searchByEmployment
+);
+router.get('/common/:searchKey', searchController.commonSearch);
 
 module.exports = router;

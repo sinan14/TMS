@@ -64,7 +64,7 @@ exports.getAll = Model =>
     let filter = {};
     if (req.params.trainerId)
       filter = {
-        Model: req.params.trainerId
+        Trainer: req.params.trainerId
       };
     const features = new APIFeatures(Model.find(filter), req.query)
       .filter()
@@ -91,7 +91,7 @@ exports.getAll = Model =>
   });
 exports.backendSearch = (Model, fields) =>
   catchAsync(async (req, res, next) => {
-    const regex = new RegExp(req.params.keyword, 'i');
+    const regex = new RegExp(req.params.searchKey, 'i');
     const arrayOfRegex = [];
     fields.forEach(e => {
       arrayOfRegex.push({ [e]: regex });

@@ -9,8 +9,30 @@ exports.searchByCourse = factory.backendSearch(Trainer, ['course']);
 exports.searchByEmployment = factory.backendSearch(Trainer, [
   'typeOfemployment'
 ]);
+exports.searchByName = catchAsync(async function(req, res) {
+  const regex = new RegExp(req.params.searchKey, 'i');
+  const userIds = await new APIFeatures(
+    User.find(
+      {
+        $or: [{ fname: regex }, { lname: regex }]
+      },
+      { _id: 1 }
+    ),
+    req.query
+  ).paginate().query;
+  const trainers = await Trainer.find({
+    status: 'approved',
+    user: { $in: userIds }
+  });
+  // console.log(trainers);
+  res.status(200).json({
+    status: 'success',
+    nos: trainers.length,
+    data: trainers
+  });
+});
 exports.commonSearch = catchAsync(async (req, res, next) => {
-  const regex = new RegExp(req.params.keyword, 'i');
+  const regex = new RegExp(req.params.searchKey, 'i');
   const findKey = {
     $and: [
       {
@@ -23,27 +45,30 @@ exports.commonSearch = catchAsync(async (req, res, next) => {
       }
     ]
   };
-  const features = new APIFeatures(Trainer.find(findKey), req.query)
-    .limitFields()
-    .paginate();
-  const doc = await features.query;
-  let docs = [];
   const countDocuments = new APIFeatures(
     Trainer.countDocuments(findKey),
     req.query
   ).count();
   const count = await countDocuments.query;
-  const userIdsFromDocs = doc.map(e => e.user._id);
+
+  const features = new APIFeatures(Trainer.find(findKey), req.query)
+    .limitFields()
+    .paginate();
+  const trainers = await features.query;
+
+  const userIdsFromDocs = trainers.map(e => e.user._id);
   // const userIds = await User.distinct('_id', filter);
   // const userIds = await User.find(filter, { _id: 1 });
   const filter = {
     $or: [{ fname: regex }, { lname: regex }]
   };
+
   const userIds = await new APIFeatures(
     User.find(filter, { _id: 1 }),
     req.query
   ).paginate().query;
   const idsCombined = [...userIds, ...userIdsFromDocs];
+  let trainersWithName = [];
   // console.log(userIds);
   // console.log(userIdsFromDocs);
   // console.log(idsCombined);
@@ -53,7 +78,7 @@ exports.commonSearch = catchAsync(async (req, res, next) => {
   // console.log(uniqIds);
   // console.log(uniqIds.length);
   if (uniqIds.length) {
-    docs = await new APIFeatures(
+    trainersWithName = await new APIFeatures(
       Trainer.find({
         status: 'approved',
         user: { $in: uniqIds }
@@ -63,41 +88,19 @@ exports.commonSearch = catchAsync(async (req, res, next) => {
       .limitFields()
       .paginate().query;
   }
-  const arr = [...doc, ...docs];
+  const arr = [...trainers, ...trainersWithName];
 
-  // const arr123 = await arr.filter(
-  //   (v, i, a) =>
-  //todo json stringify worked here
-  //     a.findIndex(t => t._id.toString() === v._id.toString() === i
-  // )
-
+  // //todo json stringify worked here
+  //   const arr123 = arr.filter(
+  //     (v, i, a) =>
+  //       a.findIndex(t => JSON.stringify(t._id) === JSON.stringify(v._id) === i
+  //   );
+  // console.log(arr123)
   // SEND RESPONSE
   res.status(200).json({
     status: 'success',
     nos2: arr.length,
     count,
-    arr
-  });
-});
-exports.searchByName = catchAsync(async function(req, res) {
-  const regex = new RegExp(req.params.keyword, 'i');
-  const userIds = await new APIFeatures(
-    User.find(
-      {
-        $or: [{ fname: regex }, { lname: regex }]
-      },
-      { _id: 1 }
-    ),
-    req.query
-  ).paginate().query;
-  const doc = await Trainer.find({
-    status: 'approved',
-    user: { $in: userIds }
-  });
-  // console.log(doc);
-  res.status(200).json({
-    status: 'success',
-    nos: doc.length,
-    data: doc
+    arr: JSON.stringify
   });
 });
